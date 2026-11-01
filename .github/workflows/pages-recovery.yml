@@ -11,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Cancel the verified orphaned Pages deployment
+      - name: Read the conflicting Pages deployment state
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST repos/steffko81/telegram-rich-copy/pages/deployments/9b2d4b57b1add53df0d3dc9b2c138b7947e10ff3/cancel
           gh api repos/steffko81/telegram-rich-copy/pages/deployments/9b2d4b57b1add53df0d3dc9b2c138b7947e10ff3
