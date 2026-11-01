@@ -5,12 +5,6 @@ const preview=document.getElementById('preview');
 const status=document.getElementById('status');
 const allow=new Set(['H1','H2','H3','H4','H5','H6','P','DIV','SPAN','BR','STRONG','B','EM','I','U','MARK','S','DEL','SUP','SUB','UL','OL','LI','BLOCKQUOTE','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','DETAILS','SUMMARY','PRE','CODE','A','HR']);
 const skip=new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','FORM','INPUT','BUTTON','SVG','MATH','TEMPLATE','META','LINK','BASE','VIDEO','AUDIO','IMG']);
-const samples={
-short:`<h2>📌 Workshop update</h2><p><strong>Saturday 7 November 2026, 10:00</strong> · School library</p><p><u>Important:</u> Room <s>A</s> has changed to <mark>Room B</mark>.</p><p>Bring a notebook, laptop and water.</p>`,
-advanced:`<h2>📌 Rich formatting check</h2><p><strong>Confirmed</strong> · <em>Payment pending</em> · <strong><em>Updated</em></strong></p><p><u>Important</u>: <mark>Room B</mark> replaces <s>Room A</s>. x<sup>n+1</sup> and R<sub>room index</sub></p><blockquote>Use the assigned entrance.<blockquote>East Gate only.</blockquote></blockquote><table><thead><tr><th align="left">Item</th><th align="center">Start</th><th align="right">End</th></tr></thead><tbody><tr><td>Workshop</td><td align="center">10:00</td><td align="right">12:00</td></tr></tbody></table><details open><summary>Secondary details</summary><p>Reference <code>REF_A-17/β</code></p><details open><summary>Search phrases</summary><p>B side entrance</p></details></details>`,
-reference:`<h2>Volunteer desk reference</h2><p><strong>Saturday · 09:00–17:00</strong> · Building C</p><ol><li>Show ID.</li><li>Confirm room.</li><li>Collect badge.</li></ol><p><a href="https://example.com/info?a=1&amp;b=two#details">Room information</a></p><p>Codes:</p><pre><code>TEST_REF-2026\nA_B-C.D/123:456?x–y&amp;z=1</code></pre><details open><summary>Secondary information</summary><p>Keep the <mark>confirmed</mark> status separate from pending payment.</p></details>`
-};
-const chatPrompt=`Create a finished, attractive Telegram Rich Text message as a semantic HTML fragment. Return EXACTLY ONE fenced html code block, with no other text. Use normal Markdown fence markers, without angle brackets; no fences inside the HTML. Preserve the supplied facts, exact dates/times, recipients, links, statuses and commitments. Invent nothing. If the notes say only a weekday (e.g. Tuesday), keep only that weekday: do NOT calculate, infer or add a calendar date. Likewise never expand a relative timeframe such as 'this week' into unprovided exact dates.\n\nEDITORIAL AIM: A beautifully readable MOBILE message. In a five-second scan, readers should see the action, key timeframe and next event. Choose the simplest elegant layout for the actual content, not a showcase of HTML features. Compact does not mean cramped. Write naturally for the audience.\n\n- Start with the principal action or important change, not a vague preamble. If useful, add a SHORT <h2> title (ideally 2–5 words so it fits a phone). Use <h3> for genuinely different substantive topics; no heading for a simple courtesy closing.\n- Make a supplied date, time, deadline, required action or correction stand out with <strong>. Use <mark> at most once or twice, and only if its meaning is clear. Do not state the same time twice in different formats: write 20:00, NOT '20:00 (8:00 PM)'.\n- DEFAULT to short paragraphs with real semantic headings and natural breathing room. Use a two-column <table> ONLY when at least THREE independent logistical facts/rows or a genuine comparison benefit from columns. Day and Time for ONE meeting belong together in one emphasized line, NOT a table. Never repeat table facts in surrounding prose.\n- Don't add decorative <hr> dividers to a short routine announcement. Longer messages may use lists, tables, quotations or collapsible details when they materially improve comprehension.\n- End routine messages with at most one brief, warm <p> for any supplied Sunday wishes or exam encouragement. No 'Weekend Wishes' heading, invented greetings or sign-offs, filler ('things are moving along nicely'), generic thanks, extra optimism or redundant summaries.\n- Final editorial check: Is the title short? Is every fact expressed only once? Is each visual element genuinely useful? Would the message read naturally and look spacious on a phone? Remove anything unnecessary before output.\n\nSemantic HTML allowed: h1–h6, p, strong, em, u, mark, s, sup, sub, ul, ol, li, blockquote, table, thead, tbody, tr, th, td, details, summary, code, pre, a, hr. No CSS, scripts, style attributes, classes, wrappers or html/head/body tags. Preserve exact supplied hyperlinks.\n\nINFORMATION TO FORMAT:\n[Replace this line with your facts]`;
 function updateStatus(message,kind='') {status.className=kind;status.textContent=message;}
 function clean(node){
  if(node.nodeType===Node.TEXT_NODE) return document.createTextNode(node.nodeValue);
@@ -58,7 +52,7 @@ function render(){
  const parsed=normalize(source.value);preview.replaceChildren();
  if(parsed.error){updateStatus(parsed.error,'warn');return false;}
  const text=parsed.html;
- if(!text){const p=document.createElement('p');p.className='empty';p.textContent='Your formatted message will appear here.';preview.appendChild(p);updateStatus('Paste an HTML message or choose a sample.');return false;}
+ if(!text){const p=document.createElement('p');p.className='empty';p.textContent='Your formatted message will appear here.';preview.appendChild(p);updateStatus('Copy the ChatGPT HTML code block, then tap Paste from clipboard.');return false;}
  if(!/<(?:h[1-6]|p|strong|em|u|mark|ul|ol|li|blockquote|table|details|pre|a|div|span)\b/i.test(text)){
   updateStatus('This does not look like an HTML fragment. Copy the HTML code block, not the whole ChatGPT response.','warn');return false;
  }
@@ -86,10 +80,6 @@ function plainNode(node,depth=0){
 }
 function plainText(){return plainNode(preview).replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim();}
 async function writePlain(text){await navigator.clipboard.writeText(text);}
-document.getElementById('prompt').addEventListener('click',async()=>{
- try{await writePlain(chatPrompt);updateStatus('Reusable ChatGPT prompt copied. Paste into regular ChatGPT and replace the facts.','success');}
- catch{updateStatus('Prompt copy was blocked. Please open the source field and copy the prompt from the testing guide.','warn');}
-});
 document.getElementById('paste').addEventListener('click',async()=>{
  try{
   if(!navigator.clipboard?.readText)throw new Error('Clipboard read unavailable');
@@ -100,9 +90,6 @@ document.getElementById('paste').addEventListener('click',async()=>{
  }catch(err){document.querySelector('.source-panel').open=true;source.focus();updateStatus('Automatic paste unavailable: '+String(err?.message||err)+'. Long-press in the source field and choose Paste.','warn');}
 });
 source.addEventListener('input',render);
-for(const btn of document.querySelectorAll('[data-sample]'))btn.addEventListener('click',()=>{
- const key=btn.getAttribute('data-sample');source.value=samples[key];render();updateStatus('Sample loaded: '+key+'. Tap Copy formatted message, then test in Telegram Saved Messages.','success');
-});
 document.getElementById('select').addEventListener('click',()=>{
  if(!render())return;selectPreview();updateStatus('Preview selected. Use Android selection Copy; this is a separate fallback route.','warn');
 });
