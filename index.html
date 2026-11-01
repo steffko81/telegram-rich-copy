@@ -17,46 +17,40 @@
 <header class="mast">
   <div class="logo" aria-hidden="true">✧</div>
   <div>
-    <div class="eyebrow">RICH TEXT COMPANION</div>
+    <div class="eyebrow">ANDROID RICH-TEXT CLIPBOARD</div>
     <h1>Telegram Rich Copy</h1>
-    <p class="subhead">Copy beautifully formatted messages to Telegram. Your text stays on your device.</p>
+    <p class="subhead">Paste HTML from ChatGPT. Copy the formatted message into Telegram.</p>
   </div>
 </header>
-<div class="step">
-  <span class="number">1</span>
+<section class="step" aria-labelledby="paste-title">
+  <span class="number" aria-hidden="true">1</span>
   <div class="step-body">
-    <h2>Bring in your message</h2>
-    <p>Ask ChatGPT for a <strong>semantic HTML code block</strong> and tap its code-block Copy icon.</p>
-    <div class="button-row">
-      <button id="paste" type="button">Paste from clipboard</button>
-      <button id="prompt" class="outlined" type="button">Copy ChatGPT prompt</button>
-    </div>
+    <h2 id="paste-title">Paste your message</h2>
+    <p>Copy the HTML code block in ChatGPT, then tap below.</p>
+    <button id="paste" class="primary-wide" type="button">Paste from clipboard</button>
     <details class="source-panel">
-      <summary>View or edit message source</summary>
-      <label for="source">Semantic HTML fragment</label>
+      <summary>Paste manually or edit HTML</summary>
+      <label for="source">HTML message source</label>
       <textarea id="source" rows="6" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="HTML source"></textarea>
     </details>
   </div>
-</div>
-<div class="step">
-  <span class="number">2</span>
+</section>
+<section class="step" aria-labelledby="copy-title">
+  <span class="number" aria-hidden="true">2</span>
   <div class="step-body">
-    <div class="heading-row"><h2>Preview</h2><span class="minor">Sanitized HTML</span></div>
-    <section id="preview" aria-label="Rendered Telegram message preview"></section>
-    <div class="demo-bar"><span>Test samples:</span><button class="text-button" data-sample="short" type="button">Short</button><button class="text-button" data-sample="advanced" type="button">Advanced</button><button class="text-button" data-sample="reference" type="button">Reference</button></div>
-  </div>
-</div>
-<div class="step">
-  <span class="number">3</span>
-  <div class="step-body">
-    <h2>Copy to Telegram</h2>
-    <p>Use the button below, then paste into Telegram’s <strong>Rich Text Editor</strong>.</p>
+    <h2 id="copy-title">Copy to Telegram</h2>
+    <p>Check the preview, then copy and paste into Telegram's Rich Text Editor.</p>
+    <section id="preview" aria-label="Formatted message preview"></section>
     <button id="copy" class="primary-wide" type="button">Copy formatted message</button>
-    <p id="status" role="status" aria-live="polite">Choose a sample or paste your own HTML to start.</p>
-    <details class="help"><summary>If clipboard access is blocked</summary><p>Open “View or edit message source” and long-press → Paste, or use “Select preview” and Android’s native selection Copy. These are fallback methods, not equivalent success evidence.</p><button id="select" class="outlined" type="button">Select preview</button></details>
+    <p id="status" role="status" aria-live="polite">Copy the HTML code block in ChatGPT, then tap Paste from clipboard.</p>
+    <details class="help">
+      <summary>Clipboard not working?</summary>
+      <p>Open “Paste manually or edit HTML” and use Android's Paste action. If rich copying is blocked, try “Select preview” and copy the selection.</p>
+      <button id="select" class="outlined" type="button">Select preview</button>
+    </details>
   </div>
-</div>
-<footer><p>No server, no account, no analytics, no message storage. The site delivers its own files; it does not transmit your message text.</p><p class="footer-note">Clipboard support depends on the browser and Android. Always inspect the first Telegram paste. Never use this tool for secrets you wouldn't paste into a browser page.</p></footer>
+</section>
+<footer><p>The website processes your message on your device. No account or message upload.</p></footer>
 </main>
 </body>
 </html>
