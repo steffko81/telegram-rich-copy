@@ -1,4 +1,4 @@
-const CACHE='telegram-rich-copy-v3-3';
+const CACHE='telegram-rich-copy-v3-4';
 const APP=['./','./index.html','./app.css','./app.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
