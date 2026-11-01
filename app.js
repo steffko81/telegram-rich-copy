@@ -10,7 +10,7 @@ short:`<h2>📌 Workshop update</h2><p><strong>Saturday 7 November 2026, 10:00</
 advanced:`<h2>📌 Rich formatting check</h2><p><strong>Confirmed</strong> · <em>Payment pending</em> · <strong><em>Updated</em></strong></p><p><u>Important</u>: <mark>Room B</mark> replaces <s>Room A</s>. x<sup>n+1</sup> and R<sub>room index</sub></p><blockquote>Use the assigned entrance.<blockquote>East Gate only.</blockquote></blockquote><table><thead><tr><th align="left">Item</th><th align="center">Start</th><th align="right">End</th></tr></thead><tbody><tr><td>Workshop</td><td align="center">10:00</td><td align="right">12:00</td></tr></tbody></table><details open><summary>Secondary details</summary><p>Reference <code>REF_A-17/β</code></p><details open><summary>Search phrases</summary><p>B side entrance</p></details></details>`,
 reference:`<h2>Volunteer desk reference</h2><p><strong>Saturday · 09:00–17:00</strong> · Building C</p><ol><li>Show ID.</li><li>Confirm room.</li><li>Collect badge.</li></ol><p><a href="https://example.com/info?a=1&amp;b=two#details">Room information</a></p><p>Codes:</p><pre><code>TEST_REF-2026\nA_B-C.D/123:456?x–y&amp;z=1</code></pre><details open><summary>Secondary information</summary><p>Keep the <mark>confirmed</mark> status separate from pending payment.</p></details>`
 };
-const chatPrompt=`Generate a finished Telegram Rich Text message as semantic HTML source code, not a chat draft. Return exactly ONE fenced html code block and nothing else. Preserve supplied facts, exact statuses, recipients and links; invent no dates, deadlines, costs, commitments or locations.\n\nDESIGN GOAL: Make the message elegant, airy and effortless to scan on a phone, with clear visual hierarchy. Compact does NOT mean cramped. Choose formatting independently for the specific message, rather than following a fixed template.\n\n- Use actual <h2> or <h3> section headings where there are multiple topics. Do not simulate section headings with a bold <p> immediately adjacent to other text. Separate sections with meaningful block structure so headings clearly belong to the content below them.\n- Make the key action, deadline or timeframe, meeting date/time, changes and confirmed/pending status easy to spot. Use <strong> for essential labels, and <mark> selectively for one or two important values or corrections, not whole paragraphs. Use <u> or <s> only when it adds genuine meaning.\n- Consider a small, readable TWO-COLUMN <table> for a group of 2–4 related facts (for example date, time and location, or booking and payment status). Use <th> and <td> with short cell contents. Do not force a table when prose, a brief list or two short paragraphs are clearer.\n- Give each idea room to breathe. Prefer short paragraphs grouped under distinct headings; avoid walls of text, tightly stacked bold labels, gratuitous repetition and boilerplate closing statements. Maintain natural, audience-appropriate wording. Do not add facts to fill a layout.\n- Use purposeful icons sparingly. Avoid a generic calendar emoji that shows the wrong date. Use blockquotes, lists or collapsible details only when the content benefits from them.\n- Encode structure through semantic HTML elements, not CSS or artificial blank-line tricks. The Telegram editor controls final font metrics and line height.\n\nAllowed elements: h1–h6, p, strong, em, u, mark, s, sup, sub, ul, ol, li, blockquote, table, thead, tbody, tr, th, td, details, summary, code, pre, a, hr. No scripts, CSS, style attributes, classes, html/head/body wrappers, generic div/span wrappers or visible Markdown source. Use descriptive links with the exact supplied URLs.\n\nINFORMATION TO FORMAT:\n[Replace this line with your facts]`;
+const chatPrompt=`Generate a finished Telegram Rich Text message as semantic HTML source code, not a chat draft. Return exactly ONE fenced html code block and nothing else. Do not add angle brackets around the opening or closing code fences; they are not HTML tags. Never place code fences inside the HTML. Preserve supplied facts, exact statuses, recipients and links; invent no dates, deadlines, costs, commitments or locations.\n\nDESIGN GOAL: Make the message elegant, airy and effortless to scan on a phone, with clear visual hierarchy. Compact does NOT mean cramped. Choose formatting independently for the specific message, rather than following a fixed template.\n\n- Use actual <h2> or <h3> section headings where there are multiple topics. Do not simulate section headings with a bold <p> immediately adjacent to other text. Separate sections with meaningful block structure so headings clearly belong to the content below them.\n- Make the key action, deadline or timeframe, meeting date/time, changes and confirmed/pending status easy to spot. Use <strong> for essential labels, and <mark> selectively for one or two important values or corrections, not whole paragraphs. Use <u> or <s> only when it adds genuine meaning.\n- Consider a small, readable TWO-COLUMN <table> for a group of 2–4 related facts (for example date, time and location, or booking and payment status). Use <th> and <td> with short cell contents. Do not force a table when prose, a brief list or two short paragraphs are clearer.\n- Give each idea room to breathe. Prefer short paragraphs grouped under distinct headings; avoid walls of text, tightly stacked bold labels and gratuitous repetition. Do not invent a greeting, sign-off, 'Best regards', or boilerplate closing statements. Do not turn a courtesy wish into a large section heading unless it is the message's main subject. Maintain natural, audience-appropriate wording. Do not add facts to fill a layout.\n- Use purposeful icons sparingly. Avoid a generic calendar emoji that shows the wrong date. Use blockquotes, lists or collapsible details only when the content benefits from them.\n- Encode structure through semantic HTML elements, not CSS or artificial blank-line tricks. The Telegram editor controls final font metrics and line height.\n\nAllowed elements: h1–h6, p, strong, em, u, mark, s, sup, sub, ul, ol, li, blockquote, table, thead, tbody, tr, th, td, details, summary, code, pre, a, hr. No scripts, CSS, style attributes, classes, html/head/body wrappers, generic div/span wrappers or visible Markdown source. Use descriptive links with the exact supplied URLs.\n\nINFORMATION TO FORMAT:\n[Replace this line with your facts]`;
 function updateStatus(message,kind='') {status.className=kind;status.textContent=message;}
 function clean(node){
  if(node.nodeType===Node.TEXT_NODE) return document.createTextNode(node.nodeValue);
@@ -38,17 +38,37 @@ function clean(node){
  for(const child of [...node.childNodes])el.appendChild(clean(child));
  return el;
 }
-function normalize(text){let t=text.trim();const m=t.match(/^```(?:html)?\s*\n([\s\S]*?)\n```\s*$/i);if(m)t=m[1];return t;}
+function normalize(text){
+ let t=text.trim();
+ const opening=t.match(/^(?:<\s*)?```[ \t]*(?:html)?[ \t]*\r?\n/i);
+ const closing=t.match(/\r?\n```[ \t]*>?[ \t]*$/);
+ if(opening||closing){
+  if(!opening||!closing||opening[0].length+closing[0].length>=t.length)
+   return {error:'Incomplete or malformed HTML code fence. Copy only the message HTML.'};
+  t=t.slice(opening[0].length,t.length-closing[0].length).trim();
+  if(!t||/^(?:<\s*)?```/.test(t))
+   return {error:'Nested or malformed code fence. Copy only one HTML message.'};
+  return {html:t,unwrapped:true};
+ }
+ if(/^(?:<\s*)?```/.test(t)||/```[ \t]*>?[ \t]*$/.test(t))
+  return {error:'Unmatched code fence detected. Copy only the HTML fragment.'};
+ return {html:t,unwrapped:false};
+}
 function render(){
- const text=normalize(source.value);preview.replaceChildren();
+ const parsed=normalize(source.value);preview.replaceChildren();
+ if(parsed.error){updateStatus(parsed.error,'warn');return false;}
+ const text=parsed.html;
  if(!text){const p=document.createElement('p');p.className='empty';p.textContent='Your formatted message will appear here.';preview.appendChild(p);updateStatus('Paste an HTML message or choose a sample.');return false;}
  if(!/<(?:h[1-6]|p|strong|em|u|mark|ul|ol|li|blockquote|table|details|pre|a|div|span)\b/i.test(text)){
   updateStatus('This does not look like an HTML fragment. Copy the HTML code block, not the whole ChatGPT response.','warn');return false;
  }
  const doc=new DOMParser().parseFromString(text,'text/html');
+ if([...doc.body.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())){
+  updateStatus('Stray text outside the HTML elements. Please copy only the generated HTML message.','warn');return false;
+ }
  for(const child of [...doc.body.childNodes])preview.appendChild(clean(child));
  if(!preview.textContent.trim()){updateStatus('No renderable message content found.','warn');return false;}
- updateStatus('Preview ready. Check the facts, then tap Copy formatted message.');return true;
+ updateStatus(parsed.unwrapped?'Code fences removed. Check the preview, then copy.':'Preview ready. Check the facts, then tap Copy formatted message.');return true;
 }
 function selectPreview(){const selection=window.getSelection();const range=document.createRange();range.selectNodeContents(preview);selection.removeAllRanges();selection.addRange(range);}
 function plainNode(node,depth=0){
