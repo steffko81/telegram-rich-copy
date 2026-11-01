@@ -48,6 +48,27 @@ function normalize(text){
   return {error:'Unmatched code fence detected. Copy only the HTML fragment.'};
  return {html:t,unwrapped:false};
 }
+// Reject truncated or mismatched markup before the HTML parser can repair it.
+function completeFragment(text){
+ const voids=new Set(['AREA','BASE','BR','COL','EMBED','HR','IMG','INPUT','LINK','META','PARAM','SOURCE','TRACK','WBR']);
+ const stack=[];
+ const tokens=/<!--[^]*?-->|<\/?([a-z][\w:-]*)(?:\s+(?:[^<>"']|"[^"]*"|'[^']*')*)?\s*\/?>|[^<]+/giy;
+ let match;
+ while(tokens.lastIndex<text.length){
+  match=tokens.exec(text);
+  if(!match)return false;
+  const token=match[0];
+  if(!match[1])continue;
+  const tag=match[1].toUpperCase();
+  if(token.startsWith('</')){
+   if(voids.has(tag)||!/^<\/[a-z][\w:-]*\s*>$/i.test(token)||stack.pop()!==tag)return false;
+  }else if(!voids.has(tag)){
+   if(/\/\s*>$/.test(token))return false;
+   stack.push(tag);
+  }
+ }
+ return stack.length===0;
+}
 function render(){
  const parsed=normalize(source.value);preview.replaceChildren();
  if(parsed.error){updateStatus(parsed.error,'warn');return false;}
@@ -56,6 +77,7 @@ function render(){
  if(!/<(?:h[1-6]|p|strong|em|u|mark|ul|ol|li|blockquote|table|details|pre|a|div|span)\b/i.test(text)){
   updateStatus('This does not look like an HTML fragment. Copy the HTML code block, not the whole ChatGPT response.','warn');return false;
  }
+ if(!completeFragment(text)){updateStatus('Incomplete or mismatched HTML. Copy the complete HTML code block.','warn');return false;}
  const doc=new DOMParser().parseFromString(text,'text/html');
  if([...doc.body.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())){
   updateStatus('Stray text outside the HTML elements. Please copy only the generated HTML message.','warn');return false;
